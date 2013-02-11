@@ -1,6 +1,17 @@
 #include "monitor.hpp"
 
 #include <edba/edba.hpp>
+#include <edba/session.hpp>
+#include <edba/types_support/boost_fusion.hpp>
+#include <edba/types_support/boost_optional.hpp>
+
+#include <boost/fusion/container/map.hpp>
+#include <boost/fusion/algorithm/iteration/for_each.hpp>
+#include <boost/fusion/include/at_key.hpp>
+#include <boost/fusion/include/iterator_range.hpp>
+#include <boost/fusion/iterator/next.hpp> // include
+#include <boost/fusion/container/generation/make_list.hpp>
+#include <boost/fusion/container/generation/make_vector.hpp>
 
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/foreach.hpp>
@@ -9,7 +20,10 @@
 #include <iostream>
 #include <ctime>
 
-using namespace std;
+//using namespace std;
+using std::cout;
+using std::endl;
+using std::string;
 
 #ifdef _WIN32 
 const char* sqlite3_lib = "edba_sqlite3";
@@ -199,9 +213,67 @@ void test_var()
     cout << "Elapsed: " << t.elapsed() << endl;
 }
 
+namespace nodes {
+    using boost::fusion::at_key;
+
+    struct node_row : boost::fusion::map<
+        boost::fusion::pair<struct id_t, int>,
+        boost::fusion::pair<struct votes_t, int>,
+        boost::fusion::pair<struct title_t, string>,
+        boost::fusion::pair<struct descript_t, boost::optional<string> >
+        >
+    {
+        void insert(edba::session& sql) {
+            using namespace boost::fusion;
+
+            sql << "INSERT INTO test_n (votes, title, descript) VALUES (?, ?, ?)"
+                << iterator_range<result_of::next<result_of::begin<node_row>::type>::type, result_of::end<node_row>::type>(next(begin(*this)), end(*this))
+                << edba::exec;
+        }
+    };
+
+    inline node_row select(edba::session& sql, int id) {
+        node_row n;
+        edba::row r = sql << "SELECT * FROM test_n WHERE id = :id" << id << edba::first_row >> n;
+        return n;
+    }
+
+    inline void create_table(edba::session& sql) {
+        try {
+            sql << "DROP TABLE [test_n]" << edba::exec;
+        } catch(...) {}
+
+        sql << "CREATE TABLE test_n (id INT NOT NULL IDENTITY (1, 1) PRIMARY KEY, votes INT NOT NULL, title NVARCHAR(150) NOT NULL, descript NVARCHAR(150) NULL)" << edba::exec;
+    }
+
+}
+
+
+void test_fusion()
+{
+    try {
+        edba::session sess(edba::driver::odbc_s(), "Driver={SQL Native Client};Server=.\\SQLEXPRESS;Database=testdb;Trusted_Connection=yes;"/*, &m*/);
+
+        nodes::create_table(sess);
+
+        nodes::node_row n;
+        nodes::at_key<nodes::id_t>(n) = 4; // it will be skipped
+        nodes::at_key<nodes::votes_t>(n) = -1;
+        nodes::at_key<nodes::title_t>(n) = "sdf";
+
+        n.insert(sess);
+
+        nodes::node_row l = nodes::select(sess, 1);
+        cout << nodes::at_key<nodes::title_t>(l) << endl;
+    } catch(std::exception& ex) {
+        cout << ex.what() << endl;
+    }
+}
+
 int main()
 {
-    test_var();
+    //test_var();
+    test_fusion();
 
     //test_simple(sqlite3_lib, "sqlite3", "db=db.db");
     //test_simple(postgres_lib, "postgres", "user = postgres; password = postgres;");

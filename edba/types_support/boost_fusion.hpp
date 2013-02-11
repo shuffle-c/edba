@@ -3,14 +3,11 @@
 
 #include <edba/types.hpp>
 
+#include <boost/fusion/support/pair.hpp>
 #include <boost/fusion/support/is_sequence.hpp>
 #include <boost/fusion/algorithm/iteration/for_each.hpp>
 
 namespace edba {
-
-#include <boost/preprocessor/iteration/iterate.hpp>
-#include <boost/preprocessor/iteration/local.hpp>
-#include <boost/preprocessor/repetition/enum_params.hpp>
 
 template<typename T>
 struct bind_conversion< T, typename boost::enable_if< boost::fusion::traits::is_sequence<T> >::type >
@@ -24,6 +21,12 @@ struct bind_conversion< T, typename boost::enable_if< boost::fusion::traits::is_
         void operator()(const T1& v) const
         {
             st_ << v;
+        }
+
+        template<typename T1, typename T2>
+        void operator()(const boost::fusion::pair<T1, T2>& v) const
+        {
+            st_ << v.second;
         }
     };
 
@@ -46,6 +49,12 @@ struct fetch_conversion< T, typename boost::enable_if< boost::fusion::traits::is
         void operator()(T1& v) const
         {
             r_ >> v;
+        }
+
+        template<typename T1, typename T2>
+        void operator()(boost::fusion::pair<T1, T2>& v) const
+        {
+            r_ >> v.second;
         }
     };
 

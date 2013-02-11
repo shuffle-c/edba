@@ -8,6 +8,7 @@
 #include <boost/range/algorithm/equal_range.hpp>
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/typeof/typeof.hpp>
+#include <boost/move/move.hpp>
 #include <boost/timer.hpp>
 
 #include <map>
@@ -22,7 +23,7 @@ namespace {
 
 void *dlopen(char const *name,int /*unused*/)
 {
-    return LoadLibrary(name);
+    return LoadLibraryA(name);
 }
 void dlclose(void *h)
 {
@@ -249,7 +250,8 @@ void connection::exec_batch(const string_ref& _q)
         int major;
         int minor;
         version(major, minor);
-        exec_batch_impl(select_statements_in_batch(_q, engine(), major, minor));
+        std::string st(boost::move(select_statements_in_batch(_q, engine(), major, minor)));
+        exec_batch_impl(st);
     }
     else 
         exec_batch_impl(_q);

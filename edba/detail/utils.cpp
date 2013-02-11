@@ -32,7 +32,7 @@ std::tm parse_time(char const *v)
     std::tm t=std::tm();
     int n;
     double sec = 0;
-    n = sscanf(v,"%d-%d-%d %d:%d:%lf",
+    n = EDBA_SSCANF(v,"%d-%d-%d %d:%d:%lf",
                 &t.tm_year,&t.tm_mon,&t.tm_mday,
                 &t.tm_hour,&t.tm_min,&sec);
     if(n!=3 && n!=6)
@@ -53,7 +53,7 @@ void parse_number_impl(const string_ref& r, const char* fmt, T& res)
 {
     char buf[32];
     EDBA_STRNCPY(buf, r.begin(), r.size());
-    if (0 == sscanf(buf, fmt, &res))
+    if (0 == EDBA_SSCANF(buf, fmt, &res))
         throw bad_value_cast();
 }
 void parse_number(const string_ref& r, short& num)

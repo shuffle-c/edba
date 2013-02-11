@@ -450,8 +450,8 @@ public:
             {
                 // Workaround for null binding trouble in the SQL Server. (Checked for 2005 Express and 2008 Express)
                 // Following code cause exception
-                // sql << "CREATE TABLE test_n (aa, bb) VALUES (?, ?) << 0 << edba::null << edba::exec;
-                // sql << "INSERT INTO test_n (aa, bb) VALUES (?, ?) << 0 << edba::null << edba::exec;
+                // sql << "CREATE TABLE test_n (aa INT NULL, bb INT NULL)" << edba::exec;
+                // sql << "INSERT INTO test_n (aa, bb) VALUES (?, ?)" << 0 << edba::null << edba::exec;
                 //
                 // SQLDescribeParams will return error if it will be called after SQLBindParameter for the first time.
                 // Thanks to a.sitnikov (http://vk.com/typename) for report and workaround :)
